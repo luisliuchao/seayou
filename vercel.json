@@ -1,0 +1,6 @@
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }],
+  "outputDirectory": ".",
+  "buildCommand": "cd frontend; mkdir dist; npm run deploy; rm -fr node_modules; mkdir ../api/frontend; mv -f dist ../api/frontend/dist",
+  "installCommand": "cd frontend; npm install"
+}
