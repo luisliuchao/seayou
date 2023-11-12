@@ -77,7 +77,7 @@ def direct_message(employee_code, text_content):
     headers = create_headers()
     data = {
         "employee_code": employee_code,
-        "message": {"tag": "text", "text": {"content": text_content}},
+        "message": {"tag": "text", "text": {"content": text_content, "format": 2}},
     }
 
     response = requests.post(url, json=data, headers=headers)
@@ -112,3 +112,35 @@ def direct_message(employee_code, text_content):
         app.logger.error(
             "Reply back failed to %s with response code %s", employee_code, code
         )
+
+
+# https://open.seatalk.io/docs/Send-Message-to-Group-Chat
+def group_message(group_id, text_content):
+    url = "https://openapi.seatalk.io/messaging/v2/group_chat"
+    headers = create_headers()
+    data = {
+        "group_id": group_id,
+        "message": {"tag": "text", "text": {"content": text_content, "format": 1}},
+    }
+
+    response = requests.post(url, json=data, headers=headers)
+    response_data = response.json()
+    code = response_data.get("code", None)
+
+    if code == 0:
+        app.logger.info(
+            'Send to group %s: "%s" with response code %s',
+            group_id,
+            text_content,
+            code,
+        )
+    elif code == 100:
+        refresh_app_access_token()
+        return group_message(group_id, text_content)
+    elif code == 101:
+        app.logger.error("Reply back failed: exceed rate limit")
+    else:
+        app.logger.error(
+            "Send failed to group %s with response code %s", group_id, code
+        )
+    return response_data

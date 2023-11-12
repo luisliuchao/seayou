@@ -103,6 +103,14 @@ def manual_reply_handler(data):
     return ""
 
 
+@app.route("/api/send-to-group", methods=["POST"])
+@require_login
+@extract_data
+def send_to_group_handler(data):
+    app.logger.info("handle send to group %s", data)
+    return bot_client.handle_send_to_group(**data)
+
+
 @app.route("/api/check_login", methods=["POST"])
 @require_login
 @extract_data
@@ -149,7 +157,7 @@ def login_handler(data):
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def index(path):
-    if has_frontend():
+    if has_frontend:
         return render_template("index.html")
     else:
         return "Great! You have successfully deployed your SeaTalk bot."

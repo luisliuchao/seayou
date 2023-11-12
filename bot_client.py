@@ -1,7 +1,13 @@
 import sea_api
 from consts import MessageDirection, MessageType
 from convex_api import convex_client
-from utils import get_timestamp, get_user_profile, has_frontend, post_request
+from utils import (
+    format_with_tag,
+    get_timestamp,
+    get_user_profile,
+    has_frontend,
+    post_request,
+)
 
 # ref: https://open.seatalk.io/docs/list-of-events
 EVENT_VERIFICATION = "event_verification"
@@ -104,3 +110,15 @@ def handle_broadcast_message(**kwargs):
             "to_employee_codes": remaining_employee_codes,
         }
         post_request("api/broadcast-message", data)
+
+
+def handle_send_to_group(**kwargs):
+    group_id = kwargs.get("group_id", "")
+    text_content = kwargs.get("text_content", "")
+
+    if not group_id or not text_content:
+        return {"error": "missing group_id or text_content"}
+
+    formatted_content = format_with_tag(text_content)
+
+    return sea_api.group_message(group_id, formatted_content)
