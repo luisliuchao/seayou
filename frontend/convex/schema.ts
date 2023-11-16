@@ -27,11 +27,21 @@ export default defineSchema({
     subscribed_at: s.optional(s.number()),
     unread_count: s.optional(s.number()),
   }).index("by_employee_code", ["employee_code"]),
-
   messages: defineTable({
     body: s.string(),
     body_type: s.number(),
     direction: s.number(),
-    employee_code: s.string(),
-  }).index("by_employee_code", ["employee_code"]),
+    employee_code: s.optional(s.string()),
+    group_id: s.optional(s.string()),
+    group_name: s.optional(s.string()),
+  })
+    .index("by_employee_code", ["employee_code"])
+    .index("by_group_id", ["group_id"]),
+  groups: defineTable({
+    group_id: s.string(),
+    group_name: s.string(),
+    is_subscriber: s.optional(s.boolean()),
+    unread_count: s.optional(s.number()),
+    last_message_at: s.optional(s.number()),
+  }).index("by_group_id", ["group_id"]),
 });

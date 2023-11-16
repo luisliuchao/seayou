@@ -32,7 +32,18 @@ export const list = query(async ({ db }) => {
 });
 
 export const update = mutation(
-  async ({ db }, { id, payload }: { id: any; payload: any }) => {
-    db.patch(id, payload);
+  async (
+    { db },
+    { employee_code, payload }: { employee_code: string; payload: any }
+  ) => {
+    const existing = await db
+      .query("users")
+      .withIndex("by_employee_code", (q) =>
+        q.eq("employee_code", employee_code)
+      )
+      .first();
+    if (existing) {
+      db.patch(existing._id, payload);
+    }
   }
 );

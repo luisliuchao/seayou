@@ -35,10 +35,11 @@ def get_user_profile(employee_code):
         if not user_profile:
             user_profile = sea_api.fetch_user_profile(employee_code)
             if user_profile:
-                convex_client.mutation("users:add", user_profile)
+                convex_client.mutation(
+                    "users:add", {**user_profile, "is_subscriber": True}
+                )
     else:
         user_profile = sea_api.fetch_user_profile(employee_code)
-
     return user_profile
 
 
@@ -53,4 +54,36 @@ def format_with_tag(text_content):
         r"@(\S+@\S+)", r'<mention-tag target="seatalk://user?email=\1"/>', text_content
     )
 
+    # replace @abcdef with <mention-tag target="seatalk://user?id=abcdef"/>
+    text_content = re.sub(
+        r"@(\S+)", r'<mention-tag target="seatalk://user?id=\1"/>', text_content
+    )
+
     return text_content
+
+
+def get_group_profile(group_id):
+    if convex_client:
+        group = convex_client.query("groups:get", {"group_id": group_id})
+        if not group:
+            group = sea_api.fetch_group_profile(group_id)
+            if group:
+                group = convex_client.mutation(
+                    "groups:add",
+                    {
+                        "group_id": group_id,
+                        "group_name": group.get("group_name"),
+                        "is_subscriber": True,
+                    },
+                )
+        return group
+    else:
+        group = sea_api.fetch_group_profile(group_id)
+
+    if group:
+        return {
+            "group_id": group.get("group_id"),
+            "group_name": group.get("group_name"),
+        }
+    else:
+        return None

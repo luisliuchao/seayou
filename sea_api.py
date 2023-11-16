@@ -67,6 +67,23 @@ def fetch_user_profile(employee_code):
         return fetch_user_profile(employee_code)
 
 
+# https://open.seatalk.io/docs/get-group-info
+def fetch_group_profile(group_id):
+    url = "https://openapi.seatalk.io/messaging/v2/group_chat/info"
+    headers = create_headers()
+    response = requests.get(url, params={"group_id": group_id}, headers=headers)
+    response_data = response.json()
+
+    code = response_data.get("code", None)
+    app.logger.info("Get group %s profile with response code %s", group_id, code)
+
+    if code == 0:
+        return response_data.get("group", {})
+    elif code == 100:
+        refresh_app_access_token()
+        return fetch_group_profile(group_id)
+
+
 # https://open.seatalk.io/docs/messaging_send-message-to-bot-subscriber
 def direct_message(employee_code, text_content):
     if not employee_code:
@@ -134,6 +151,16 @@ def group_message(group_id, text_content):
             text_content,
             code,
         )
+        if convex_client:
+            convex_client.mutation(
+                "messages:add",
+                {
+                    "direction": MessageDirection.OUTGOING,
+                    "group_id": group_id,
+                    "body_type": MessageType.TEXT,
+                    "body": text_content,
+                },
+            )
     elif code == 100:
         refresh_app_access_token()
         return group_message(group_id, text_content)

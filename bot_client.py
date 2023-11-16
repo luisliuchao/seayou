@@ -3,6 +3,7 @@ from consts import MessageDirection, MessageType
 from convex_api import convex_client
 from utils import (
     format_with_tag,
+    get_group_profile,
     get_timestamp,
     get_user_profile,
     has_frontend,
@@ -50,7 +51,7 @@ def handle_subscriber_message(**kwargs):
             convex_client.mutation(
                 "users:update",
                 {
-                    "id": user_profile["_id"],
+                    "employee_code": employee_code,
                     "payload": {
                         "unread_count": unread_count + 1,
                         "last_message_at": get_timestamp(),
@@ -122,3 +123,77 @@ def handle_send_to_group(**kwargs):
     formatted_content = format_with_tag(text_content)
 
     return sea_api.group_message(group_id, formatted_content)
+
+
+def handle_bot_added_to_group(**event):
+    group_id = event.get("group", {}).get("group_id", "")
+    group = get_group_profile(group_id)
+
+    # inform the inviter
+    inviter_employee_code = event.get("inviter", {}).get("employee_code", "")
+    if inviter_employee_code:
+        sea_api.direct_message(
+            inviter_employee_code,
+            f"Thanks for inviting me to {group.get('group_name')} (group_id: {group.get('group_id')}).",
+        )
+
+
+def handle_group_mention_message(**event):
+    group_id = event.get("group_id", "")
+    message = event.get("message", {})
+    text_content = message.get("text", {}).get("plain_text", "")
+    sender_employee_code = message.get("sender", {}).get("employee_code", "")
+    mentioned_list = message.get("text", {}).get("mentioned_list", [])
+
+    for mention in mentioned_list:
+        username = mention.get("username", "")
+        seatalk_id = mention.get("seatalk_id", "")
+        if f"@{username}" in text_content:
+            text_content = text_content.replace(
+                f"@{username}", f"@{username} ({seatalk_id})"
+            )
+
+    if convex_client:
+        group = get_group_profile(group_id)
+
+        if group:
+            # record the message
+            convex_client.mutation(
+                "messages:add",
+                {
+                    "direction": MessageDirection.INCOMING,
+                    "employee_code": sender_employee_code,
+                    "body_type": MessageType.TEXT,
+                    "body": text_content,
+                    "group_id": group.get("group_id"),
+                    "group_name": group.get("group_name"),
+                },
+            )
+
+            # update the user's unread_count and last_message_at
+            unread_count = group.get("unread_count", 0)
+            convex_client.mutation(
+                "groups:update",
+                {
+                    "group_id": group_id,
+                    "payload": {
+                        "unread_count": unread_count + 1,
+                        "last_message_at": get_timestamp(),
+                    },
+                },
+            )
+
+
+def handle_bot_removed_from_group(**event):
+    group_id = event.get("group_id", "")
+
+    if convex_client:
+        convex_client.mutation(
+            "groups:update",
+            {
+                "group_id": group_id,
+                "payload": {
+                    "is_subscriber": False,
+                },
+            },
+        )

@@ -10,7 +10,7 @@ export const _list = query({
   },
 });
 
-export const list = query(
+export const listUser = query(
   async ({ db }, { employeeCode }: { employeeCode: string }) => {
     return await db
       .query("messages")
@@ -18,6 +18,16 @@ export const list = query(
       .collect();
   }
 );
+
+export const listGroup = query(
+  async ({ db }, { groupId }: { groupId: string }) => {
+    return await db
+      .query("messages")
+      .withIndex("by_group_id", (q) => q.eq("group_id", groupId))
+      .collect();
+  }
+);
+
 
 export const add = mutation(async ({ db }, message: any) => {
   await db.insert("messages", message);

@@ -6,12 +6,31 @@ import axios from "../axios";
 import { IUser } from "../types";
 
 interface Props {
-  onSelect: (user: IUser) => void;
+  onSelect: (item: IUser) => void;
   selectedUser: IUser | undefined;
 }
 
 const UserList = ({ onSelect, selectedUser }: Props) => {
+  const all_groups = useQuery(api.groups.list) || [];
   const all_users = useQuery(api.users.list) || [];
+
+  const groups = useMemo(
+    () =>
+      all_groups.sort((a, b) => {
+        return a.group_name.localeCompare(b.group_name);
+      }).map(group => {
+        return {
+          ...group,
+          name: group.group_name,
+          employee_code: group.group_id,
+          avatar: "https://i.pravatar.cc/300",
+          is_group: true,
+          seatalk_id: group.group_id,
+          email: "",
+        }
+      }),
+    [all_groups]
+  );
 
   const users = useMemo(
     () =>
@@ -20,6 +39,8 @@ const UserList = ({ onSelect, selectedUser }: Props) => {
       }),
     [all_users]
   );
+
+  const list = [...groups, ...users];
 
   const showSendToAllDialog = useCallback(async () => {
     const message = prompt("Message to send to all users");
@@ -68,12 +89,12 @@ const UserList = ({ onSelect, selectedUser }: Props) => {
         </button>
       </div>
 
-      {users.map((user) => {
-        const { avatar, name, _id, unread_count } = user;
+      {list.map((user) => {
+        const { avatar, name, employee_code, unread_count } = user;
         const isSelected = selectedUser?.employee_code == user.employee_code;
         return (
           <div
-            key={_id.toString()}
+            key={employee_code}
             style={{
               padding: "20px",
               borderBottom: "1px solid #ccc",

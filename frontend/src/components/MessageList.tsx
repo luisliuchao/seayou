@@ -15,21 +15,32 @@ message
 const MessageCard = ({ message }: { message: IMessage }) => {
   const { direction } = message;
 
+  const user =
+    message.group_id && message.employee_code &&
+    useQuery(api.users.get, { employee_code: message.employee_code });
+
   return (
-    <div
-      style={{
-        padding: "10px",
-        border: "1px solid #ccc",
-        borderRadius: "10px",
-        maxWidth: "400px",
-        marginBottom: "10px",
-        marginLeft: direction === 1 ? "auto" : "0",
-        position: "relative",
-      }}
-    >
-      <div style={{ whiteSpace: "pre-line" }}>{message.body}</div>
-      <div style={{ fontSize: "10px", marginTop: "5px", color: "#555" }}>
-        {new Date(message._creationTime).toLocaleString()}
+    <div>
+      {user && (
+        <div style={{ marginBottom: "5px" }}>
+          {user.name} ({user.seatalk_id})
+        </div>
+      )}
+      <div
+        style={{
+          padding: "10px",
+          border: "1px solid #ccc",
+          borderRadius: "10px",
+          maxWidth: "400px",
+          marginBottom: "20px",
+          marginLeft: direction === 1 ? "auto" : "0",
+          position: "relative",
+        }}
+      >
+        <div style={{ whiteSpace: "pre-line" }}>{message.body}</div>
+        <div style={{ fontSize: "10px", marginTop: "5px", color: "#555" }}>
+          {new Date(message._creationTime).toLocaleString()}
+        </div>
       </div>
     </div>
   );
@@ -38,10 +49,13 @@ const MessageCard = ({ message }: { message: IMessage }) => {
 interface Props {
   employeeCode: string;
   scrollToBottom: () => void;
+  isGroup?: boolean;
 }
 
-const MessageList = ({ employeeCode, scrollToBottom }: Props) => {
-  const messages = useQuery(api.messages.list, { employeeCode }) || [];
+const MessageList = ({ employeeCode, scrollToBottom, isGroup }: Props) => {
+  const messages = isGroup
+    ? useQuery(api.messages.listGroup, { groupId: employeeCode }) || []
+    : useQuery(api.messages.listUser, { employeeCode }) || [];
 
   useEffect(() => {
     setTimeout(() => {

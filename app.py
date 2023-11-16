@@ -21,6 +21,10 @@ NEW_BOT_SUBSCRIBER = "new_bot_subscriber"
 MESSAGE_FROM_BOT_SUBSCRIBER = "message_from_bot_subscriber"
 INTERACTIVE_MESSAGE_CLICK = "interactive_message_click"
 
+BOT_ADDED_TO_GROUP = "bot_added_to_group_chat"
+MENTION_MESSAGE_FROM_GROUP = "new_mentioned_message_received_from_group_chat"
+BOT_REMOVED_FROM_GROUP = "bot_removed_from_group_chat"
+
 
 def require_login(func):
     def wrapper(**kwargs):
@@ -81,7 +85,7 @@ def bot_callback_handler(data):
             "employee_code": employee_code,
         }
         bot_client.handle_new_subscriber(**data)
-        return "success_new_subscriber"
+        return ""
     elif event_type == MESSAGE_FROM_BOT_SUBSCRIBER:
         data = {
             "event_id": event_id,
@@ -89,7 +93,16 @@ def bot_callback_handler(data):
             "text_content": text_content,
         }
         bot_client.handle_subscriber_message(**data)
-        return "success_new_message"
+        return ""
+    elif event_type == BOT_ADDED_TO_GROUP:
+        bot_client.handle_bot_added_to_group(**event)
+        return ""
+    elif event_type == MENTION_MESSAGE_FROM_GROUP:
+        bot_client.handle_group_mention_message(**event)
+        return ""
+    elif event_type == BOT_REMOVED_FROM_GROUP:
+        bot_client.handle_bot_removed_from_group(**event)
+        return ""
     else:
         return "error_unknown_event_type"
 

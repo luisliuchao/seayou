@@ -11,6 +11,7 @@ export default function Home() {
   const [user, setUser] = useState<IUser>();
   const [error, setError] = useState("");
   const updateUser = useMutation(api.users.update);
+  const updateGroup = useMutation(api.groups.update);
 
   const [newMessageText, setNewMessageText] = useState("");
 
@@ -31,10 +32,17 @@ export default function Home() {
       }
 
       try {
-        await axios.post("/api/manual-reply", {
-          employee_code: user.employee_code,
-          text_content: content,
-        });
+        if (user.is_group) {
+          await axios.post("/api/send-to-group", {
+            group_id: user.employee_code,
+            text_content: content,
+          });
+        } else {
+          await axios.post("/api/manual-reply", {
+            employee_code: user.employee_code,
+            text_content: content,
+          });
+        }
       } catch (error) {
         setError("Error sending message");
       }
@@ -53,12 +61,21 @@ export default function Home() {
     setUser(user);
     window.setTimeout(() => {
       // reset the unread count
-      updateUser({
-        id: user._id,
-        payload: {
-          unread_count: 0,
-        },
-      });
+      if (user.is_group) {
+        updateGroup({
+          group_id: user.employee_code,
+          payload: {
+            unread_count: 0,
+          },
+        });
+      } else {
+        updateUser({
+          employee_code: user.employee_code,
+          payload: {
+            unread_count: 0,
+          },
+        });
+      }
     }, 2000);
   }, []);
 
@@ -99,7 +116,7 @@ export default function Home() {
               />
               <div>
                 <div>
-                  {user.name} ({user.employee_code})
+                  {user.name} ({user.seatalk_id})
                 </div>
                 <div>{user.email}</div>
               </div>
@@ -111,6 +128,7 @@ export default function Home() {
               <MessageList
                 employeeCode={user.employee_code}
                 scrollToBottom={scrollToBottom}
+                isGroup={user.is_group}
               />
             </div>
             <form

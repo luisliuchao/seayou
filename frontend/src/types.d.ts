@@ -1,21 +1,15 @@
 export interface IUser {
-  _id: any;
   avatar: string;
-  chatgpt_replies?: string[];
-  custom_fields: { name: string; type: number; value: string }[];
-  departments: string[];
   email: string;
+  name: string;
   employee_code: string;
-  gender: number;
   is_subscriber?: boolean;
   last_message_at?: number;
-  mobile: string;
-  name: string;
-  reporting_manager_employee_code: string;
   seatalk_id: string;
-  seatalk_nickname: string;
+  seatalk_nickname?: string;
   subscribed_at?: number;
   unread_count?: number;
+  is_group?: boolean;
 }
 
 export enum MessageBodyType {
@@ -32,6 +26,7 @@ export interface IMessage {
   body: string;
   body_type: MessageBodyType;
   direction: MessageDirection;
-  employee_code: string;
+  employee_code?: string;
+  group_id?: string;
   _creationTime: number;
 }
